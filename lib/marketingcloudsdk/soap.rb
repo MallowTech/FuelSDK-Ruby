@@ -271,8 +271,17 @@ module MarketingCloudSDK
 
 		def soap_request action, message
 			response = action.eql?(:describe) ? DescribeResponse : SoapResponse
-
-			rsp = soap_client.call(action, :message => message)
+			retried = false
+			begin
+				rsp = soap_client.call(action, :message => message)
+			rescue
+				raise if retried
+				retried = true
+				retry
+			end
+			response.new rsp, self
+		rescue
+			raise if rsp.nil?
 			response.new rsp, self
 		end
 	end
